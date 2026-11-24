@@ -4,7 +4,7 @@
 name: grithub
 id: com.nebuff.grithub
 type: app
-version: 0.1.0
+version: 0.1.1
 author: nebuff
 description: A GitHub Projects V2 kanban board on e-ink.
 license: GPL-3.0-or-later
