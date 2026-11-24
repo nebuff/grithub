@@ -1,0 +1,22 @@
+# Grimoire app manifest (docs/APPS.md, 2.3).
+# `make` copies the built module to app.wasm and rewrites the artifact digest
+# and size below via tools/package.py, so this file is always publishable.
+name: GitHub Projects
+id: com.nebuff.grithub
+type: app
+version: 0.1.0
+author: nebuff
+description: A GitHub Projects V2 kanban board on e-ink.
+license: GPL-3.0-or-later
+license_url: https://github.com/nebuff/grithub/blob/main/LICENSE
+repository: https://github.com/nebuff/grithub
+min_grimoire_version: 2.3.0
+platforms: [all]
+artifact:
+  path: app.wasm
+  sha256: d16dbb1621cc8b48ac84a423a0951279cdc4bf15181c5c6776bc548b7cc29ffd
+  size: 237397
+capabilities: [storage:app-local, network:http]
+spec:
+  runtime: wasm
+  entry: _start
