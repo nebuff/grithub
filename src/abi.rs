@@ -21,7 +21,9 @@ use crate::host::{Face, Host, HttpRequest, Rect, Style, View};
 #[link(wasm_import_module = "grimoire")]
 extern "C" {
     fn fill_rect(x: i32, y: i32, w: i32, h: i32, gray: i32);
-    fn line(x0: i32, y0: i32, x1: i32, y1: i32, width: i32, gray: i32);
+    /// Unlike the other drawing calls, the host takes `line`'s coordinates and
+    /// width as `f32`; `i32` there fails instantiation with a type mismatch.
+    fn line(x0: f32, y0: f32, x1: f32, y1: f32, width: f32, gray: i32);
     fn text_at(x: i32, baseline: i32, ptr: *const u8, len: usize, px_milli: i32, face: i32, gray: i32);
     fn text_width(ptr: *const u8, len: usize, px_milli: i32, face: i32) -> i32;
     fn text_height(px_milli: i32, face: i32) -> i32;
@@ -92,7 +94,16 @@ impl Host for WasmHost {
     }
 
     fn line(&mut self, x0: i32, y0: i32, x1: i32, y1: i32, width: i32, gray: u8) {
-        unsafe { line(x0, y0, x1, y1, width, gray as i32) }
+        unsafe {
+            line(
+                x0 as f32,
+                y0 as f32,
+                x1 as f32,
+                y1 as f32,
+                width as f32,
+                gray as i32,
+            )
+        }
     }
 
     fn text_at(&mut self, x: i32, baseline: i32, text: &str, px_milli: i32, face: Face, gray: u8) {

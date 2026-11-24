@@ -7,7 +7,7 @@ all: app
 
 app: app.wasm
 
-app.wasm: src/*.rs Cargo.toml
+app.wasm: src/*.rs Cargo.toml icon.ico
 	cargo build --release --target $(TARGET)
 	cp $(WASM) app.wasm
 	python3 tools/package.py

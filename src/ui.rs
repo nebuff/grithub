@@ -362,7 +362,7 @@ pub fn draw_auth<H: Host>(
     let mut y = m.pad * 2;
 
     let t = baseline(host, y, m.head_px, Face::Title);
-    host.text_at(left, t, "GitHub Projects", m.head_px, Face::Title, INK);
+    host.text_at(left, t, "grithub", m.head_px, Face::Title, INK);
 
     // Which OAuth App this device is set up for; the button below changes it.
     if let Some(id) = v.client_id {
@@ -547,7 +547,7 @@ pub fn draw_board<H: Host>(
     let page = v.page.min(pages.saturating_sub(1));
 
     let title = if v.board.project_title.is_empty() {
-        "GitHub Projects"
+        "grithub"
     } else {
         v.board.project_title.as_str()
     };

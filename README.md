@@ -14,7 +14,7 @@ module builds for `wasm32`, but it has not yet been loaded by a device.
 1. Open **Settings → Packages → Apps → Install from repository...**
 2. Enter `nebuff/grithub`.
 3. Accept the trust page and install.
-4. Open **GitHub Projects** from the home app row or **All apps**.
+4. Open **grithub** from the home app row or **All apps**.
 
 The app needs the `network:http` and `storage:app-local` capabilities. It hides
 the shared status bar so a column gets the whole display.
@@ -69,9 +69,13 @@ make
 ```
 
 `make` builds `target/wasm32-unknown-unknown/release/grithub.wasm`, copies it to
-`app.wasm` at the repository root, and rewrites `artifact.sha256` and
-`artifact.size` in `package.yaml` via `tools/package.py`. Publish `app.wasm`
-and `package.yaml` together, with a new version, for an update.
+`app.wasm` at the repository root, and rewrites `artifact.sha256`,
+`artifact.size`, `spec.icon_sha256` and `spec.icon_size` in `package.yaml` via
+`tools/package.py`. Publish `app.wasm`, `icon.ico` and `package.yaml` together,
+with a new version, for an update.
+
+The icon is a bundled `icon.ico`, a three-column kanban mark drawn for this app;
+`tools/make_icon.py` redraws it and needs only Python 3.
 
 ```sh
 make check   # typecheck host and wasm targets, no artifact written
@@ -90,7 +94,8 @@ make test    # host-side unit tests
 | `src/layout.rs` | Pure geometry and text wrapping. |
 | `src/ui.rs` | Screen drawing, on-screen keyboard and hit regions. |
 | `src/host.rs` | The `Host` trait plus a mock host for tests. |
-| `tools/package.py` | Writes the artifact digest and size into the manifest. |
+| `tools/make_icon.py` | Redraws `icon.ico` (Python 3 only). |
+| `tools/package.py` | Writes the artifact and icon digests and sizes into the manifest. |
 
 The app is written against `Host`, not against `extern "C"`, so all behaviour
 except the ~250 lines of `abi.rs` is testable with `cargo test` on a laptop.
