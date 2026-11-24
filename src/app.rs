@@ -62,6 +62,7 @@ pub enum Hit {
     PrevPage,
     NextPage,
     CloseDetail,
+    Close,
     ChangeClient,
     SetupChar(u8),
     SetupShift,
@@ -683,6 +684,7 @@ impl App {
 
     fn dispatch<H: Host>(&mut self, host: &mut H, hit: Hit) {
         match hit {
+            Hit::Close => host.close(),
             Hit::Retry => {
                 self.diagnostics = None;
                 self.status = None;
@@ -1012,6 +1014,17 @@ mod tests {
 
         app.frame(&mut host, VIEW);
         assert_eq!(app.flow.user_code.as_deref(), Some("BFEE-895F"));
+    }
+
+    #[test]
+    fn the_close_button_leaves_the_app() {
+        let mut host = MockHost::new();
+        let mut app = App::boot(&mut host);
+        app.frame(&mut host, VIEW);
+
+        tap(&mut app, &mut host, Hit::Close);
+
+        assert!(host.closed, "✕ must ask the host to close the app");
     }
 
     #[test]

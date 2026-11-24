@@ -98,32 +98,32 @@ fn fit_tail<H: Host>(host: &H, text: &str, max_w: i32, px: i32, face: Face) -> S
     "…".to_owned()
 }
 
-/// Centred single line inside a key or tile.
-fn centered<H: Host>(host: &mut H, rect: Rect, text: &str, px: i32, face: Face, gray: u8) {
-    let tw = host.text_width(text, px, face);
-    let th = host.text_height(px, face);
-    let x = rect.x + (rect.w - tw).max(0) / 2;
-    let top = rect.y + (rect.h - th).max(0) / 2;
-    let t = top + th;
-    host.text_at(x, t, text, px, face, gray);
-}
-
 fn muted_line<H: Host>(host: &mut H, x: i32, top: i32, px: i32, text: &str) {
     let t = baseline(host, top, px, Face::Regular);
     host.text_at(x, t, text, px, Face::Regular, MUTED);
 }
 
+/// The ✕ at the top right of every screen. Grimoire's own header action buttons
+/// are 96 px squares; a 120 px target is easier to hit with a finger and still
+/// clears the title.
+fn close_button<H: Host>(host: &mut H, m: &Metrics, view: View, hits: &mut Vec<(Rect, Hit)>) {
+    let d = m.button_h;
+    let rect = Rect::new(view.w - m.pad - d, (m.header_h - d) / 2, d, d);
+    host.button(rect, "✕", Style::Plain);
+    hits.push((rect, Hit::Close));
+}
+
+/// A key drawn with the host's own button, so the keyboard is Grimoire's
+/// rounded, themed control at Grimoire's size instead of a lookalike.
 fn setup_key<H: Host>(
     host: &mut H,
     rect: Rect,
     label: &str,
-    px: i32,
     style: Style,
     hit: Hit,
     hits: &mut Vec<(Rect, Hit)>,
 ) {
-    host.card(rect, style);
-    centered(host, rect, label, px, Face::Bold, INK);
+    host.button(rect, label, style);
     hits.push((rect, hit));
 }
 
@@ -173,7 +173,7 @@ pub fn draw_setup<H: Host>(
     host.text_at(left, t, "OAuth App Client ID", m.body_px, Face::Bold, INK);
     y += m.line_h + m.gap;
 
-    let field = Rect::new(left, y, width, m.line_h + 2 * m.card_pad);
+    let field = Rect::new(left, y, width, m.button_h + m.card_pad);
     host.card(field, Style::Selected);
 
     let face = Face::Fixed;
@@ -229,9 +229,6 @@ pub fn draw_setup<H: Host>(
     let unit = (view.w - 2 * m.pad - 9 * gap) / 10;
     let key_h = (kb_h - 4 * gap) / 5;
     let kb_top = kb_bottom - kb_h;
-    let key_px = (key_h * 380).max(16_000);
-    let small_px = (key_h * 200).max(12_000);
-
     if key_h > 0 {
         // QWERTYUIOP
         for (i, ch) in "qwertyuiop".chars().enumerate() {
@@ -241,7 +238,6 @@ pub fn draw_setup<H: Host>(
                 host,
                 Rect::new(x, kb_top, unit, key_h),
                 &label,
-                key_px,
                 Style::Plain,
                 Hit::SetupChar(ch as u8),
                 hits,
@@ -259,7 +255,6 @@ pub fn draw_setup<H: Host>(
                 host,
                 Rect::new(x, y1, unit, key_h),
                 &label,
-                key_px,
                 Style::Plain,
                 Hit::SetupChar(ch as u8),
                 hits,
@@ -272,7 +267,6 @@ pub fn draw_setup<H: Host>(
             host,
             Rect::new(m.pad, y2, unit, key_h),
             "SHIFT",
-            small_px,
             if v.shift { Style::Selected } else { Style::Plain },
             Hit::SetupShift,
             hits,
@@ -284,7 +278,6 @@ pub fn draw_setup<H: Host>(
                 host,
                 Rect::new(x, y2, unit, key_h),
                 &label,
-                key_px,
                 Style::Plain,
                 Hit::SetupChar(ch as u8),
                 hits,
@@ -294,7 +287,6 @@ pub fn draw_setup<H: Host>(
             host,
             Rect::new(m.pad + 9 * (unit + gap), y2, unit, key_h),
             "DEL",
-            small_px,
             Style::Plain,
             Hit::SetupBackspace,
             hits,
@@ -309,7 +301,6 @@ pub fn draw_setup<H: Host>(
                 host,
                 Rect::new(x, y3, unit, key_h),
                 &label,
-                key_px,
                 Style::Plain,
                 Hit::SetupChar(ch as u8),
                 hits,
@@ -327,7 +318,6 @@ pub fn draw_setup<H: Host>(
                 host,
                 Rect::new(x, y4, unit, key_h),
                 &label,
-                key_px,
                 Style::Plain,
                 Hit::SetupChar(*ch),
                 hits,
@@ -336,17 +326,19 @@ pub fn draw_setup<H: Host>(
     }
 
     // ---- footer ----
-    let by = view.h - m.footer_h + (m.footer_h - m.line_h) / 2;
+    let by = view.h - m.footer_h + (m.footer_h - m.button_h) / 2;
     let bw = (m.pad * 9).min(view.w - 2 * m.pad).max(1);
-    let go = Rect::new(m.pad, by, bw, m.line_h);
+    let go = Rect::new(m.pad, by, bw, m.button_h);
     host.button(go, "Continue", Style::Primary);
     hits.push((go, Hit::SetupSubmit));
 
     if v.existing {
-        let cancel = Rect::new(m.pad + bw + m.gap, by, m.pad * 6, m.line_h);
+        let cancel = Rect::new(m.pad + bw + m.gap, by, m.pad * 6, m.button_h);
         host.button(cancel, "Cancel", Style::Plain);
         hits.push((cancel, Hit::SetupCancel));
     }
+
+    close_button(host, &m, view, hits);
 }
 
 pub fn draw_auth<H: Host>(
@@ -370,7 +362,7 @@ pub fn draw_auth<H: Host>(
         let tw = host.text_width(&shown, m.body_px, Face::Regular);
         let t = baseline(host, m.pad, m.body_px, Face::Regular);
         host.text_at(
-            view.w - m.pad - tw,
+            view.w - m.pad - m.button_h - m.gap - tw,
             t,
             &shown,
             m.body_px,
@@ -438,9 +430,9 @@ pub fn draw_auth<H: Host>(
         host.text_at(left, t, diag, m.body_px, Face::Regular, MUTED);
     }
 
-    let by = view.h - m.footer_h + (m.footer_h - m.line_h) / 2;
+    let by = view.h - m.footer_h + (m.footer_h - m.button_h) / 2;
     let bw = (m.pad * 8).min(view.w - 2 * left).max(1);
-    let rect = Rect::new(left, by, bw, m.line_h);
+    let rect = Rect::new(left, by, bw, m.button_h);
     let label = if v.phase == &Phase::AwaitingUser {
         "Start over"
     } else {
@@ -450,9 +442,11 @@ pub fn draw_auth<H: Host>(
     hits.push((rect, Hit::Retry));
 
     let idw = (m.pad * 7).min(view.w - left - bw - m.pad).max(1);
-    let change = Rect::new(left + bw + m.gap, by, idw, m.line_h);
+    let change = Rect::new(left + bw + m.gap, by, idw, m.button_h);
     host.button(change, "Client ID", Style::Plain);
     hits.push((change, Hit::ChangeClient));
+
+    close_button(host, &m, view, hits);
 }
 
 pub fn draw_picker<H: Host>(
@@ -472,7 +466,7 @@ pub fn draw_picker<H: Host>(
         let tw = host.text_width(&label, m.body_px, Face::Regular);
         let t = baseline(host, m.pad, m.body_px, Face::Regular);
         host.text_at(
-            view.w - m.pad - tw,
+            view.w - m.pad - m.button_h - m.gap - tw,
             t,
             &label,
             m.body_px,
@@ -520,16 +514,18 @@ pub fn draw_picker<H: Host>(
         host.text_at(m.pad, t, status, m.body_px, Face::Regular, MUTED);
     }
 
-    let by = view.h - m.footer_h + (m.footer_h - m.line_h) / 2;
+    let by = view.h - m.footer_h + (m.footer_h - m.button_h) / 2;
     let bw = m.pad * 8;
 
-    let refresh = Rect::new(m.pad, by, bw, m.line_h);
+    let refresh = Rect::new(m.pad, by, bw, m.button_h);
     host.button(refresh, "Refresh", Style::Primary);
     hits.push((refresh, Hit::Refresh));
 
-    let out = Rect::new(view.w - m.pad - bw, by, bw, m.line_h);
+    let out = Rect::new(view.w - m.pad - bw, by, bw, m.button_h);
     host.button(out, "Sign out", Style::Plain);
     hits.push((out, Hit::SignOut));
+
+    close_button(host, &m, view, hits);
 }
 
 pub fn draw_board<H: Host>(
@@ -551,8 +547,15 @@ pub fn draw_board<H: Host>(
     } else {
         v.board.project_title.as_str()
     };
-    let t = baseline(host, m.pad / 2, m.head_px, Face::Title);
-    host.text_at(m.pad, t, title, m.head_px, Face::Title, INK);
+    let title = fit(
+        host,
+        title,
+        view.w - 2 * m.pad - m.button_h - m.gap,
+        m.head_px,
+        Face::Title,
+    );
+    let t = baseline(host, m.pad, m.head_px, Face::Title);
+    host.text_at(m.pad, t, &title, m.head_px, Face::Title, INK);
     hits.push((Rect::new(0, 0, view.w / 2, m.header_h), Hit::OpenProjects));
 
     let right = if let Some(status) = v.status {
@@ -566,7 +569,7 @@ pub fn draw_board<H: Host>(
         let tw = host.text_width(&text, m.body_px, Face::Regular);
         let t = baseline(host, m.pad, m.body_px, Face::Regular);
         host.text_at(
-            view.w - m.pad - tw,
+            view.w - m.pad - m.button_h - m.gap - tw,
             t,
             &text,
             m.body_px,
@@ -583,20 +586,20 @@ pub fn draw_board<H: Host>(
         draw_column(host, &m, rect, column, hits);
     }
 
-    let by = view.h - m.footer_h + (m.footer_h - m.line_h) / 2;
+    let by = view.h - m.footer_h + (m.footer_h - m.button_h) / 2;
     let bw = m.pad * 5;
 
     if page > 0 {
-        let r = Rect::new(m.pad, by, bw, m.line_h);
+        let r = Rect::new(m.pad, by, bw, m.button_h);
         host.button(r, "‹ Prev", Style::Plain);
         hits.push((r, Hit::PrevPage));
     }
 
-    let projects = Rect::new(m.pad + bw + m.gap, by, bw, m.line_h);
+    let projects = Rect::new(m.pad + bw + m.gap, by, bw, m.button_h);
     host.button(projects, "Projects", Style::Primary);
     hits.push((projects, Hit::OpenProjects));
 
-    let refresh = Rect::new(m.pad + (bw + m.gap) * 2, by, bw, m.line_h);
+    let refresh = Rect::new(m.pad + (bw + m.gap) * 2, by, bw, m.button_h);
     host.button(refresh, "Refresh", Style::Plain);
     hits.push((refresh, Hit::Refresh));
 
@@ -615,7 +618,7 @@ pub fn draw_board<H: Host>(
     }
 
     if page + 1 < pages {
-        let r = Rect::new(view.w - m.pad - bw, by - m.line_h - m.gap, bw, m.line_h);
+        let r = Rect::new(view.w - m.pad - bw, by - m.button_h - m.gap, bw, m.button_h);
         host.button(r, "Next ›", Style::Plain);
         hits.push((r, Hit::NextPage));
     }
@@ -636,6 +639,8 @@ pub fn draw_board<H: Host>(
             MUTED,
         );
     }
+
+    close_button(host, &m, view, hits);
 }
 
 fn draw_column<H: Host>(
@@ -755,7 +760,9 @@ pub fn draw_detail<H: Host>(
         host.text_at(left, t, &label, m.body_px, Face::Regular, MUTED);
     }
 
-    let rect = Rect::new(left, view.h - m.footer_h, m.pad * 7, m.line_h);
+    let rect = Rect::new(left, view.h - m.footer_h, m.pad * 7, m.button_h);
     host.button(rect, "Close", Style::Primary);
     hits.push((rect, Hit::CloseDetail));
+
+    close_button(host, &m, view, hits);
 }

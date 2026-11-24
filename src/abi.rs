@@ -42,6 +42,7 @@ extern "C" {
 
     fn now_ms() -> i64;
     fn request_redraw(after_ms: i32);
+    fn close();
     fn state_get(ptr: *mut u8, cap: usize) -> i32;
     fn state_set(ptr: *const u8, len: usize);
 
@@ -201,6 +202,10 @@ impl Host for WasmHost {
         unsafe { request_redraw(ms) }
     }
 
+    fn close(&mut self) {
+        unsafe { close() }
+    }
+
     fn state_get(&mut self) -> Vec<u8> {
         let mut buf = vec![0u8; MAX_STATE];
         let read = unsafe { state_get(buf.as_mut_ptr(), MAX_STATE) };
@@ -257,10 +262,10 @@ pub extern "C" fn app_key(code: i32, _mods: i32, down: i32) {
     }
 }
 
-/// 0 starts with the shared status bar hidden, so the board gets the display.
+/// 1 starts with Grimoire's shared status bar shown, above the app body.
 #[no_mangle]
 pub extern "C" fn app_status_bar() -> i32 {
-    0
+    1
 }
 
 #[no_mangle]

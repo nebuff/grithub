@@ -150,6 +150,9 @@ pub trait Host {
     /// The app's only timer: 16 ms to 24 hours.
     fn request_redraw(&mut self, after_ms: u32);
 
+    /// Asks the host to run `app_stop`, save and return to the Library.
+    fn close(&mut self);
+
     fn state_get(&mut self) -> Vec<u8>;
 
     fn state_set(&mut self, bytes: &[u8]);
@@ -176,6 +179,7 @@ pub mod mock {
         pub requests: Vec<HttpRequest>,
         pub draws: Vec<String>,
         pub redraws: Vec<u32>,
+        pub closed: bool,
         pending: VecDeque<Resp>,
         active: Option<Resp>,
     }
@@ -188,6 +192,7 @@ pub mod mock {
                 requests: Vec::new(),
                 draws: Vec::new(),
                 redraws: Vec::new(),
+                closed: false,
                 pending: VecDeque::new(),
                 active: None,
             }
@@ -316,6 +321,10 @@ pub mod mock {
 
         fn request_redraw(&mut self, after_ms: u32) {
             self.redraws.push(after_ms);
+        }
+
+        fn close(&mut self) {
+            self.closed = true;
         }
 
         fn state_get(&mut self) -> Vec<u8> {

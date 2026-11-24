@@ -20,29 +20,36 @@ pub struct Metrics {
     pub body_px: i32,
     pub head_px: i32,
     pub big_px: i32,
+    pub small_px: i32,
+    pub button_h: i32,
 }
 
+/// The sizes are Grimoire's own, in the 300 dpi pixels its UI is laid out in
+/// (body text 44, title 64, a header 150), multiplied by `scale_milli` — 1000 at
+/// the normal UI scale — so the app follows the owner's Settings > Display
+/// choice instead of fixing a size of its own.
 impl Metrics {
-    pub fn new(w: i32, h: i32, scale_milli: i32) -> Self {
-        let u = (w.min(h) / 60).clamp(12, 44);
+    pub fn new(_w: i32, _h: i32, scale_milli: i32) -> Self {
         let s = scale_milli.clamp(500, 3000);
+        let at = |nominal: i32| (nominal * s / 1000).max(1);
 
-        let body_px = 22_000 * s / 1000;
-        let head_px = 30_000 * s / 1000;
-        let big_px = 64_000 * s / 1000;
-        let body = (body_px / 1000).max(8);
+        let body = at(44);
+        let body_px = body * 1000;
+        let button_h = at(120);
 
         Self {
-            pad: u,
-            header_h: u * 3,
-            footer_h: u * 3,
-            gap: (u / 2).max(4),
-            col_header_h: u * 2,
-            line_h: body * 16 / 10,
-            card_pad: u * 3 / 4,
+            pad: at(50),
+            header_h: at(150),
+            footer_h: button_h + at(50),
+            gap: at(20),
+            col_header_h: at(80),
+            line_h: body * 3 / 2,
+            card_pad: at(22),
             body_px,
-            head_px,
-            big_px,
+            head_px: at(64) * 1000,
+            big_px: at(96) * 1000,
+            small_px: at(34) * 1000,
+            button_h,
         }
     }
 }
@@ -54,7 +61,7 @@ pub fn columns_across(m: &Metrics, w: i32, landscape: bool) -> usize {
         return 1;
     }
     let usable = (w - 2 * m.pad).max(1);
-    let min_width = (m.pad * 14).max(1);
+    let min_width = (m.pad * 8).max(1);
     ((usable / min_width).clamp(1, 6)) as usize
 }
 
@@ -174,10 +181,11 @@ mod tests {
         let normal = Metrics::new(2480, 1860, 1000);
         let large = Metrics::new(2480, 1860, 1500);
 
-        assert_eq!(normal.body_px, 22_000);
-        assert_eq!(large.body_px, 33_000);
+        assert_eq!(normal.body_px, 44_000);
+        assert_eq!(large.body_px, 66_000);
         assert!(large.line_h > normal.line_h);
-        assert_eq!(normal.pad, 31);
+        assert_eq!(normal.pad, 50);
+        assert_eq!(normal.button_h, 120);
     }
 
     #[test]

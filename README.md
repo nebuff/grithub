@@ -16,8 +16,9 @@ module builds for `wasm32`, but it has not yet been loaded by a device.
 3. Accept the trust page and install.
 4. Open **grithub** from the home app row or **All apps**.
 
-The app needs the `network:http` and `storage:app-local` capabilities. It hides
-the shared status bar so a column gets the whole display.
+The app needs the `network:http` and `storage:app-local` capabilities. It shows
+Grimoire's shared status bar above the board, and every screen has a **✕** at
+the top right for the way back, beside the system two-finger swipe.
 
 ## First launch: your own OAuth App
 
@@ -123,7 +124,14 @@ The parts this app relies on, as documented:
 
 Deliberate choices on top of the ABI:
 
-- `app_status_bar` returns 0 so the board gets the whole display.
+- Sizes are Grimoire's own, in its 300 dpi pixels (44 px body text, 64 px title,
+  150 px header, 120 px buttons), multiplied by `scale_milli`: the app follows
+  Settings → Display instead of pinning a size. The ABI has no text input, so
+  the setup screen draws its own full-size keyboard rather than a miniature.
+
+- `app_status_bar` returns 1, and `spec.status_bar` in the manifest says the
+  same, so the clock and battery stay visible above the board. A tap on **✕**
+  calls `close()`.
 - Taps act on `phase == 2` (up), so a press that turns into a scroll does
   nothing.
 - The app sends its own `User-Agent`; the ABI's default would otherwise
