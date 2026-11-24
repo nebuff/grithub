@@ -10,7 +10,7 @@ description: A GitHub Projects V2 kanban board on e-ink.
 license: GPL-3.0-or-later
 license_url: https://github.com/nebuff/grithub/blob/main/LICENSE
 repository: https://github.com/nebuff/grithub
-min_grimoire_version: 2.3.0
+min_grimoire_version: 2.1.0
 platforms: [all]
 artifact:
   path: app.wasm
